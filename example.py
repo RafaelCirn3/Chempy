@@ -1,15 +1,13 @@
-from mendeleev import element as elemento
+from rdkit import Chem # com essa biblioteca poderemos visualizar o composto, a partir de um png
+from rdkit.Chem import Draw
+import base64
+from io import BytesIO
 
 
-from translate import Translator
+formula = "OC[C@@H](O1)[C@@H](O)[C@H](O)[C@@H](O)[C@H](O)1"
+mol = Chem.MolFromSmiles(formula)
 
-translator = Translator(to_lang="pt")
-
-
-def descricaoElemento(elem):
-    element = elemento([elem])
-    return translator.translate(element.name)
-
-
-userElem = input("Digite um elemento ao qual você deseja saber mais sobre: ")
-print(descricaoElemento(userElem))
+image_data = BytesIO()
+Draw.MolToImage(mol).save(image_data, format="PNG")
+base64_image = base64.b64encode(image_data.getvalue()).decode("utf-8")
+Draw.MolToFile(mol, "mol.png")

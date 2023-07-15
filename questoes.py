@@ -81,9 +81,9 @@ def QuestMaker():
     # Calcula a massa molar total com base nos elementos e suas quantidades
     massamolar = 0
     for element_symbol, count in elements.items():
-        chem_element = element(element_symbol)
-        atomic_weight = chem_element.atomic_weight
-        massamolar += atomic_weight * count
+        elemento_quimico = element(element_symbol)
+        peso_atomico = elemento_quimico.atomic_weight
+        massamolar += peso_atomico * count
     
     questao = f"Qual é a massa molar de {formula}?"
     return questao, massamolar
@@ -91,3 +91,5 @@ def QuestMaker():
 # Exemplo de uso
 quest, ans = QuestMaker()
 Correcao(quest, ans)
+
+
