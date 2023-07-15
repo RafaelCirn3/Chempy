@@ -1,5 +1,6 @@
 from mendeleev import element as elemento
 
+
 from translate import Translator
 
 translator = Translator(to_lang="pt")
