@@ -1,5 +1,4 @@
 from elements import elements
-# adds an element to elements contained
 
 
 def add_elemento(ctu):
@@ -12,16 +11,15 @@ def add_elemento(ctu):
         elements_contained.append(current)
         repeats -= 1
 
-# next two functions print the report of all the information we know
 
 
 def percent_of_total(element_looking_for, total):
     times = num_of_each[element_looking_for]
     mass = round(elements[element_looking_for][1] * times, 2)
-    # returns percent rounded to same number of decimal places as the other
+    # retorna o percentual total da massa molar 
     return (round(((mass / total) * 100), 3), mass)
 
-# prints the report at the end
+# print final
 
 
 def print_report(percent_comp, total_mass):
@@ -32,7 +30,7 @@ def print_report(percent_comp, total_mass):
     print("|      {0:<49s}|".format("Percentual de Composição: "))
 
     for el in num_of_each.keys():
-        # prints the percentage of each element and the respective mass
+        # printa a porcentagem de cada elemento de sua respectiva massa 
         (percent, mass_of_element) = percent_of_total(el, total_mass)
         if (len(num_of_each.keys()) == 1):
             # 19
@@ -46,7 +44,7 @@ def print_report(percent_comp, total_mass):
 
 
 while True:
-    # gets compound and the elements in it
+    # obtem o composto
     compound = input("Insira o Composto: ")
     elements_contained = []
     current = ""
@@ -54,7 +52,7 @@ while True:
     ct = 0
     for c in range(0, len(compound)):
         if (compound[c].isupper()):
-            # if it is uppercase, indicates that we have begun to look at a new element
+            # Pra caso esteja em capslock vai identificar um novo elemento. ex: NaCl
             current = compound[c]
             try:
                 if ((not compound[c + 1].isdigit()) and (not compound[c + 1].islower())):
@@ -62,7 +60,7 @@ while True:
             except:
                 pass
         elif (compound[c].islower()):
-            # if it's lower, add it to the existing element we're looking at
+            # Pra caso esteja em minúsculo estará trabalhando como dados primários
             current += compound[c]
             try:
                 if (compound[c + 1].isupper()):
@@ -72,29 +70,29 @@ while True:
         elif (compound[c].isdigit()):
             try:
                 if (compound[c + 1].isdigit()):
-                    # if there are more digits to the subscript then it counts that and moves on
+                    # se tiver mais de um composto, adiciona e segue
                     ct += 1
                     continue
                 else:
-                    # gets a string with a number that represents the coefficient no matter how many digits it has
+                    # representa o coeficiente dos elementos
                     add_elemento(ct)
                     ct = 0
             except:
-                # means we're at the end of the number, so it appends it
+                # adiciona o elemento ao fim da lista
                 add_element(ct)
                 ct = 0
         else:
-            # prints invalid if it finds something that is a symbol like a $ or a #
+            # texto inválido
             print("Composto inválido:", compound[c])
             quit = True
             break
-        # If it's the end of the compound, adds the final element the appropriate number of times
+        # se no final do composto, adicionar o elemento final para o número de vezes
         if ((c == len(compound) - 1) and not compound[c].isdigit()):
             elements_contained.append(current)
 
     molar_mass = 0
     num_of_each = {}
-    # goes through each item in there and adds it to the total
+    # adiciona cada item ao total
     if (not quit):
         for ele in elements_contained:
             if (ele in elements):
@@ -118,7 +116,7 @@ while True:
             num_places = 3
 
         molar_mass = round(molar_mass, num_places)
-        print("")  # blank line for clarity
+        print("") 
         print_report(num_of_each, molar_mass)
 
     print("")
