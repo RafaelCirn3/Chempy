@@ -1,129 +1,109 @@
+from flask import Flask, request, jsonify
 from elements import elements
 
+app = Flask(__name__)
 
-def add_elemento(ctu):
+# Função para adicionar elementos ao composto conforme o coeficiente
+def add_elemento(compound, current, ctu):
     num_str = ""
+    # Constrói o número a partir dos dígitos no composto
     while int(ctu) > -1:
-        num_str += compound[c - ctu]
+        num_str += compound[-ctu-1]
         ctu -= 1
-    repeats = int(num_str)
+    repeats = int(num_str)  # Converte o número para inteiro
+    elements_contained = []
+    # Adiciona o elemento atual à lista o número de vezes especificado
     while repeats > 0:
         elements_contained.append(current)
         repeats -= 1
+    return elements_contained
 
-
-
-def percent_of_total(element_looking_for, total):
+# Função para calcular a porcentagem da massa molar total para um elemento específico
+def percent_of_total(element_looking_for, total, num_of_each):
     times = num_of_each[element_looking_for]
     mass = round(elements[element_looking_for][1] * times, 2)
-    # retorna o percentual total da massa molar 
+    # Retorna a porcentagem da massa total e a massa do elemento
     return (round(((mass / total) * 100), 3), mass)
 
-# print final
-
-
-def print_report(percent_comp, total_mass):
-    print("---------------------------------------------------------")
-    print("| Total de massa molar: {0:<36s}|".format(
-        str(total_mass) + " gramas/mol"))
-    print("|{0:<55s}|".format(" "))
-    print("|      {0:<49s}|".format("Percentual de Composição: "))
-
-    for el in num_of_each.keys():
-        # printa a porcentagem de cada elemento de sua respectiva massa 
-        (percent, mass_of_element) = percent_of_total(el, total_mass)
-        if (len(num_of_each.keys()) == 1):
-            # 19
-            print("|          {0:<13s}- {1:0>6.2f} % {2:<15s}|".format(
-                elements[el][0], percent, "(" + str(mass_of_element) + " grama)"))
-        else:
-            print("|          {0:<13s}- {1:0>6.3f} % {2:<15s}|".format(
-                elements[el][0], percent, "(" + str(mass_of_element) + " grama)"))
-
-    print("---------------------------------------------------------")
-
-
-while True:
-    # obtem o composto
-    compound = input("Insira o Composto: ")
+# Função para analisar o composto químico e calcular a massa molar total e a quantidade de cada elemento
+def calculate_molar_mass(compound):
     elements_contained = []
     current = ""
-    quit = False
     ct = 0
+    num_of_each = {}
+    
+    # Itera sobre cada caractere do composto
     for c in range(0, len(compound)):
-        if (compound[c].isupper()):
-            # Pra caso esteja em capslock vai identificar um novo elemento. ex: NaCl
+        if compound[c].isupper():
             current = compound[c]
             try:
-                if ((not compound[c + 1].isdigit()) and (not compound[c + 1].islower())):
+                if (not compound[c + 1].isdigit()) and (not compound[c + 1].islower()):
                     elements_contained.append(current)
-            except:
-                pass
-        elif (compound[c].islower()):
-            # Pra caso esteja em minúsculo estará trabalhando como dados primários
+            except IndexError:
+                elements_contained.append(current)
+        elif compound[c].islower():
             current += compound[c]
             try:
-                if (compound[c + 1].isupper()):
+                if compound[c + 1].isupper():
                     elements_contained.append(current)
-            except:
-                pass
-        elif (compound[c].isdigit()):
+            except IndexError:
+                elements_contained.append(current)
+        elif compound[c].isdigit():
             try:
-                if (compound[c + 1].isdigit()):
-                    # se tiver mais de um composto, adiciona e segue
+                if compound[c + 1].isdigit():
                     ct += 1
                     continue
                 else:
-                    # representa o coeficiente dos elementos
-                    add_elemento(ct)
+                    elements_contained.extend(add_elemento(compound, current, ct))
                     ct = 0
-            except:
-                # adiciona o elemento ao fim da lista
-                add_element(ct)
+            except IndexError:
+                elements_contained.extend(add_elemento(compound, current, ct))
                 ct = 0
         else:
-            # texto inválido
-            print("Composto inválido:", compound[c])
-            quit = True
-            break
-        # se no final do composto, adicionar o elemento final para o número de vezes
-        if ((c == len(compound) - 1) and not compound[c].isdigit()):
-            elements_contained.append(current)
-
+            return "Invalid character found: {}".format(compound[c]), None
+    
     molar_mass = 0
-    num_of_each = {}
-    # adiciona cada item ao total
-    if (not quit):
-        for ele in elements_contained:
-            if (ele in elements):
-                molar_mass += elements[ele][1]
-                if (ele in num_of_each):
-                    num_of_each[ele] += 1
-                else:
-                    num_of_each.update({ele: 1})
+    # Calcula a massa molar total e a quantidade de cada elemento
+    for ele in elements_contained:
+        if ele in elements:
+            molar_mass += elements[ele][1]
+            if ele in num_of_each:
+                num_of_each[ele] += 1
             else:
-                print("Elemento Inválido:", ele)
-                quit = True
-                break
+                num_of_each[ele] = 1
+        else:
+            return "Invalid element found: {}".format(ele), None
+    
+    return molar_mass, num_of_each
 
-    if (not quit):
-        num_places = input(
-            "Quantas casas decimais a resposta final deve ser arredondada (zeros extras serão removidos)? ")
-        try:
-            num_places = int(num_places)
-        except:
-            print("Número inválido, utilizando 3 como padrão.")
-            num_places = 3
+# Rota para calcular a massa molar e a composição percentual
+@app.route('/calculate', methods=['POST'])
+def calculate():
+    data = request.json
+    compound = data.get('compound')
+    decimal_places = data.get('decimal_places', 3)
+    
+    # Chama a função para calcular a massa molar e a composição do composto
+    molar_mass, num_of_each = calculate_molar_mass(compound)
+    if not num_of_each:
+        return jsonify({"error": molar_mass}), 400
+    
+    molar_mass = round(molar_mass, decimal_places)
+    percent_comp = {}
+    
+    # Calcula a composição percentual para cada elemento
+    for el in num_of_each.keys():
+        percent, mass_of_element = percent_of_total(el, molar_mass, num_of_each)
+        percent_comp[elements[el][0]] = {
+            "percent": percent,
+            "mass": mass_of_element
+        }
+    
+    return jsonify({
+        "molar_mass": molar_mass,
+        "percent_composition": percent_comp
+    })
 
-        molar_mass = round(molar_mass, num_places)
-        print("") 
-        print_report(num_of_each, molar_mass)
-
-    print("")
-    go_again = input("Calcular outro ? (s/n)? ").lower()
-    if (go_again != "sim" and go_again != "s"):
-        print("\nObrigado por utilizar nosso sistema\nCangaçoDev")
-        break
-    else:
-        print("\n-----------------------------------------------------------------------------------------\n")
-        continue
+# Inicia o servidor Flask
+if __name__ == '__main__':
+    app.run(debug=True)
